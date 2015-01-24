@@ -17,18 +17,21 @@ import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixProject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import jenkins.model.Jenkins;
 
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -319,20 +322,34 @@ public class ThrottleJobProperty extends JobProperty<AbstractProject<?,?>> {
         private Integer maxConcurrentPerNode;
         private Integer maxConcurrentTotal;
         private String categoryName;
+        private String blockingCategories;
+        private List<String> blockingCategoriesList = new ArrayList<String>();
         private List<NodeLabeledPair> nodeLabeledPairs;
 
         @DataBoundConstructor
         public ThrottleCategory(String categoryName,
                                 Integer maxConcurrentPerNode,
                                 Integer maxConcurrentTotal,
+                                String blockingCategories,
                                 List<NodeLabeledPair> nodeLabeledPairs) {
             this.maxConcurrentPerNode = maxConcurrentPerNode == null ? 0 : maxConcurrentPerNode;
             this.maxConcurrentTotal = maxConcurrentTotal == null ? 0 : maxConcurrentTotal;
             this.categoryName = categoryName;
+            this.blockingCategories = blockingCategories;
             this.nodeLabeledPairs =
                  nodeLabeledPairs == null ? new ArrayList<NodeLabeledPair>() : nodeLabeledPairs;
+
+            convertCategoriesToList(blockingCategories);
         }
         
+        private void convertCategoriesToList(String categoriesString) {
+            String[] catArray = StringUtils.split(categoriesString, ',');
+            catArray = StringUtils.stripAll(catArray);
+            if (catArray != null) {
+                Collections.addAll(blockingCategoriesList, catArray);
+            }
+        }
+
         public Integer getMaxConcurrentPerNode() {
             if (maxConcurrentPerNode == null)
                 maxConcurrentPerNode = 0;
@@ -349,6 +366,14 @@ public class ThrottleJobProperty extends JobProperty<AbstractProject<?,?>> {
 
         public String getCategoryName() {
             return categoryName;
+        }
+
+        public String getBlockingCategories() {
+            return blockingCategories;
+        }
+
+        public List<String> getBlockingCategoriesList() {
+            return blockingCategoriesList;
         }
 
         public List<NodeLabeledPair> getNodeLabeledPairs() {
